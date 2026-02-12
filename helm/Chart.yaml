@@ -1,0 +1,6 @@
+apiVersion: v2
+name: order-management
+description: A Helm chart for Kubernetes deployment of Order Management Backend
+type: application
+version: 0.1.0
+appVersion: "0.0.1"
