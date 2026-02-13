@@ -3,6 +3,7 @@ package com.example.ordermanagement.service;
 import com.example.ordermanagement.dto.ItemRequest;
 import com.example.ordermanagement.dto.OrderRequest;
 import com.example.ordermanagement.dto.OrderResponse;
+import com.example.ordermanagement.dto.PagedResponse;
 import com.example.ordermanagement.entity.Order;
 import com.example.ordermanagement.exception.DuplicateOrderNumberException;
 import com.example.ordermanagement.exception.ResourceNotFoundException;
@@ -14,10 +15,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -69,14 +73,18 @@ class OrderServiceTest {
 
     @Test
     void testFindAll() {
-        when(orderRepository.findAll()).thenReturn(Collections.singletonList(order));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Order> page = new PageImpl<>(Collections.singletonList(order));
+
+        when(orderRepository.findAll(pageable)).thenReturn(page);
         when(orderMapper.toResponse(any(Order.class))).thenReturn(orderResponse);
 
-        List<OrderResponse> result = orderService.findAll();
+        PagedResponse<OrderResponse> result = orderService.findAll(pageable);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(orderRepository, times(1)).findAll();
+        assertEquals(1, result.getContent().size());
+        assertEquals(1, result.getTotalElements());
+        verify(orderRepository, times(1)).findAll(pageable);
     }
 
     @Test
@@ -101,8 +109,6 @@ class OrderServiceTest {
     @Test
     void testCreateSuccess() {
         when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
-        // Note: In the updated Service, we use manual builder, not mapper.toEntity
-        // So we don't mock orderMapper.toEntity(orderRequest) anymore for create
         
         when(orderRepository.save(any(Order.class))).thenReturn(order);
         when(orderMapper.toResponse(any(Order.class))).thenReturn(orderResponse);
@@ -118,6 +124,26 @@ class OrderServiceTest {
         when(orderRepository.existsByOrderNumber(anyString())).thenReturn(true);
 
         assertThrows(DuplicateOrderNumberException.class, () -> orderService.create(orderRequest));
+    }
+
+    @Test
+    void testUpdateSuccess() {
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+      //  when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
+        when(orderRepository.save(any(Order.class))).thenReturn(order);
+        when(orderMapper.toResponse(any(Order.class))).thenReturn(orderResponse);
+
+        OrderResponse result = orderService.update(1L, orderRequest);
+
+        assertNotNull(result);
+        verify(orderRepository, times(1)).save(any(Order.class));
+    }
+
+    @Test
+    void testUpdateNotFound() {
+        when(orderRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> orderService.update(1L, orderRequest));
     }
 
     @Test

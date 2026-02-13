@@ -104,7 +104,7 @@
 			"name": "Orders",
 			"item": [
 				{
-					"name": "Get All Orders",
+					"name": "Get All Orders (Paginated)",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -119,7 +119,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/orders",
+							"raw": "http://localhost:8080/api/orders?page=0&size=10&sortBy=createdAt&sortDir=desc",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -128,6 +128,28 @@
 							"path": [
 								"api",
 								"orders"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-based)"
+								},
+								{
+									"key": "size",
+									"value": "10",
+									"description": "Page size"
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt",
+									"description": "Sort field"
+								},
+								{
+									"key": "sortDir",
+									"value": "desc",
+									"description": "Sort direction (asc/desc)"
+								}
 							]
 						}
 					},

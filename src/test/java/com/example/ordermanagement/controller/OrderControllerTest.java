@@ -3,6 +3,7 @@ package com.example.ordermanagement.controller;
 import com.example.ordermanagement.dto.ItemRequest;
 import com.example.ordermanagement.dto.OrderRequest;
 import com.example.ordermanagement.dto.OrderResponse;
+import com.example.ordermanagement.dto.PagedResponse;
 import com.example.ordermanagement.exception.ResourceNotFoundException;
 import com.example.ordermanagement.service.CustomUserDetailsService;
 import com.example.ordermanagement.service.JwtService;
@@ -12,9 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -51,10 +53,19 @@ class OrderControllerTest {
     @Test
     @WithMockUser(username = "user", roles = "USER")
     void testGetAllOrders() throws Exception {
-        when(orderService.findAll()).thenReturn(Collections.emptyList());
+        PagedResponse<OrderResponse> pagedResponse = PagedResponse.<OrderResponse>builder()
+                .content(Collections.emptyList())
+                .pageNumber(0)
+                .pageSize(10)
+                .totalElements(0)
+                .totalPages(0)
+                .last(true)
+                .build();
+
+        when(orderService.findAll(any(Pageable.class))).thenReturn(pagedResponse);
 
         mockMvc.perform(get("/api/orders")
-                        .header("Authorization", "Bearer mock-jwt-token"))
+                .header("Authorization", "Bearer mock-jwt-token"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }

@@ -2,6 +2,7 @@ package com.example.ordermanagement.controller;
 
 import com.example.ordermanagement.dto.OrderRequest;
 import com.example.ordermanagement.dto.OrderResponse;
+import com.example.ordermanagement.dto.PagedResponse;
 import com.example.ordermanagement.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,6 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -34,11 +37,21 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @Operation(summary = "Get all orders", description = "Retrieves a list of all orders in the system")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of orders", content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrderResponse.class)))
+    @Operation(summary = "Get all orders", description = "Retrieves a paginated list of all orders in the system")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of orders", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PagedResponse.class)))
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> getAllOrders() {
-        List<OrderResponse> orders = orderService.findAll();
+    public ResponseEntity<PagedResponse<OrderResponse>> getAllOrders(
+            @Parameter(description = "Page number (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "10") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort field", example = "createdAt") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (asc/desc)", example = "desc") @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        PagedResponse<OrderResponse> orders = orderService.findAll(pageable);
         return ResponseEntity.ok(orders);
     }
 
@@ -63,10 +76,6 @@ public class OrderController {
     public ResponseEntity<OrderResponse> createOrder(
             @Parameter(description = "Order details to be created", required = true) @Valid @RequestBody OrderRequest request,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
-
-        // Example of using the authenticated user
-        // String username = userDetails.getUsername();
-        // orderService.create(request, username);
 
         OrderResponse createdOrder = orderService.create(request);
 

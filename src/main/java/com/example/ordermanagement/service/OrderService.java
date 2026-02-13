@@ -2,6 +2,7 @@ package com.example.ordermanagement.service;
 
 import com.example.ordermanagement.dto.OrderRequest;
 import com.example.ordermanagement.dto.OrderResponse;
+import com.example.ordermanagement.dto.PagedResponse;
 import com.example.ordermanagement.entity.Item;
 import com.example.ordermanagement.entity.Order;
 import com.example.ordermanagement.exception.DuplicateOrderNumberException;
@@ -10,6 +11,8 @@ import com.example.ordermanagement.mapper.OrderMapper;
 import com.example.ordermanagement.repository.OrderRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +32,22 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "orders")
-    public List<OrderResponse> findAll() {
-        return orderRepository.findAll().stream()
+    @Cacheable(value = "orders", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
+    public PagedResponse<OrderResponse> findAll(Pageable pageable) {
+        Page<Order> ordersPage = orderRepository.findAll(pageable);
+
+        List<OrderResponse> content = ordersPage.getContent().stream()
                 .map(orderMapper::toResponse)
                 .collect(Collectors.toList());
+
+        return PagedResponse.<OrderResponse>builder()
+                .content(content)
+                .pageNumber(ordersPage.getNumber())
+                .pageSize(ordersPage.getSize())
+                .totalElements(ordersPage.getTotalElements())
+                .totalPages(ordersPage.getTotalPages())
+                .last(ordersPage.isLast())
+                .build();
     }
 
     @Transactional(readOnly = true)
