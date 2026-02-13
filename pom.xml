@@ -92,6 +92,12 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
+		<!-- Micrometer Tracing Bridge Brave -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-brave</artifactId>
+		</dependency>
+
 		<!-- AOP -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
